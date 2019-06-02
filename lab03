@@ -1,0 +1,175 @@
+## Homework lab03
+## Задание 1
+Вам поручили перейти на систему автоматизированной сборки CMake. Исходные файлы находятся в директории formatter_lib. В этой директории находятся файлы для статической библиотеки formatter. Создайте CMakeList.txt в директории formatter_lib, с помощью которого можно будет собирать статическую библиотеку formatter.
+```
+$ cd formatter
+$ cat >> CMakeLists.txt <<EOF
+cmake_minimum_required(VERSION 3.4)
+project(formatter)
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+add_library(formatter_lib1 STATIC ${CMAKE_CURRENT_SOURCE_DIR}/formatter.cpp)
+add_executable(formatter ${CMAKE_CURRENT_SOURCE_DIR}/formatter.cpp)
+target_link_libraries(formatter formatter_lib1)
+EOF
+```
+Проверка работы
+```
+$ cmake .
+$ make
+```
+Библиотека создается. Удаляем созданное при проверке. Commit, push.
+```
+$ cd ..
+$ git add .
+$ git commit -m "Создание библиотеки formatter_lib1"
+$ git push origin master
+```
+## Задание 2
+У компании "Formatter Inc." есть перспективная библиотека, которая является расширением предыдущей библиотеки. Т.к. вы уже овладели навыком созданием CMakeList.txt для статической библиотеки formatter, ваш руководитель поручает заняться созданием CMakeList.txt для библиотеки formatter_ex, которая в свою очередь использует библиотеку formatter.
+```
+$ cd formatter_ex
+$ cat >> CMakeLists.txt <<EOF
+cmake_minimum_required(VERSION 3.4)
+project(formatter_ex)
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+add_library(formatter_exlib STATIC ${CMAKE_CURRENT_SOURCE_DIR}/formatter_ex.cpp)
+add_executable(formatter_ex ${CMAKE_CURRENT_SOURCE_DIR}/formatter_ex.cpp)
+target_link_libraries(formatter_ex formatter_exlib)
+EOF
+```
+В formatter_ex.cpp нужно указать путь к файлу formatter.h
+```
+$ nano formatter_ex.cpp
+#include "../formatter_lib/formatter.h"
+```
+Проверка работы. Удаление созданных файлов. Commit, push.
+```
+$ cmake . $ make $ cd .. $ git add . $ git commit -m "Создание библиотеки formatter_exlib" $ git push origin master
+```
+## Задание 3
+```
+Cmakelists.txt
+cmake_minimum_required(VERSION 3.4) #solver_lib
+project(solver_lib)
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+add_library(solver_lib STATIC ${CMAKE_CURRENT_SOURCE_DIR}/solver.cpp)
+add_executable(solver ${CMAKE_CURRENT_SOURCE_DIR}/solver.cpp)
+target_link_libraries(solver solver_lib)
+Cmakelists.txt
+cmake_minimum_required(VERSION 3.4) # solver
+project(solver_app)
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+add_executable(solver_app ${CMAKE_CURRENT_SOURCE_DIR}/equation.cpp)
+Cmakelists.txt
+cmake_minimum_required(VERSION 3.4) #hello_world
+project(hello_world)
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+add_executable(hello_world ${CMAKE_CURRENT_SOURCE_DIR}/hello_world.cpp)
+```
+
+#include "solver.h"
+
+#include <stdexcept>
+
+void solve(float a, float b, float c, float& x1, float& x2)
+{
+    float d = (b * b) - (4 * a * c);
+    
+    if (d < 0)
+    {
+        throw std::logic_error{"error: discriminant < 0"};
+    }
+    
+    x1 = (-b - std::sqrtf(d)) / (2 * a);
+    x2 = (-b + std::sqrtf(d)) / (2 * a);
+}
+
+#pragma once
+
+void solve(float a, float b, float c, float& x1, float& x2);
+
+cmake_minimum_required(VERSION 3.4)
+project(solver_lib)
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+add_library(solver_lib STATIC ${CMAKE_CURRENT_SOURCE_DIR}/solver.cpp)
+add_executable(solver ${CMAKE_CURRENT_SOURCE_DIR}/solver.cpp)
+target_link_libraries(solver solver_lib)
+#include <iostream>
+
+#include "../formatter_ex/formatter_ex.h"
+#include "../solver_lib/solver.h"
+
+int main()
+{
+    float a = 0;
+    float b = 0;
+    float c = 0;
+    
+    std::cin >> a >> b >> c;
+    
+    float x1 = 0;
+    float x2 = 0;
+    
+    try
+    {
+        solve(a, b, c, x1, x2);
+        
+        formatter(std::cout, "x1 = " + std::to_string(x1));
+        formatter(std::cout, "x2 = " + std::to_string(x2));
+    }
+    catch (const std::logic_error& ex)
+    {
+        formatter(std::cout, ex.what());
+    }
+    
+    return 0;
+}
+
+#include "formatter.h"
+
+std::string formatter(const std::string& message)
+{
+    std::string res;
+    res += "-------------------------\n";
+    res += message + "\n";
+    res += "-------------------------\n";
+    return res;
+}
+
+#pragma once
+
+#include <string>
+
+std::string formatter(const std::string& message);
+
+#include "formatter_ex.h"
+
+#include "../formatter_lib/formatter.h"
+
+std::ostream& formatter(std::ostream& out, const std::string& message)
+{
+    return out << formatter(message);
+}
+
+#pragma once
+
+#include <string>
+#include <iostream>
+
+std::ostream& formatter(std::ostream& out, const std::string& message);
+
+#include <iostream>
+
+#include "../formatter_ex/formatter_ex.h"
+
+int main()
+{
+    formatter(std::cout, "hello, world!");
+    return 0;
+}
